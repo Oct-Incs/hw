@@ -16,23 +16,28 @@ BepInEx + Harmony の実行環境上で動作し、**いつでもトグルキー
     `<インストール先>\Horizon Walker_Data\il2cpp_data` や `GameAssembly.dll` が存在する場合はIL2CPPビルドです。
     その場合は本プロジェクトをそのまま使えません。下記「IL2CPPの場合」を参照してください。
 
+## ビルド済みDLLの入手
+
+- 本リポジトリのビルドはGitHub Actions等でも再現できる、ゲーム本体不要のビルド構成です
+  (Unity公式APIはNuGetの `UnityEngine.Modules` パッケージ、BepInEx本体は `libs/BepInEx/` に同梱した
+  公式リリースバイナリを参照するため、手元にゲームが無くても `dotnet build` だけで動作するDLLが生成できます)。
+- 自分でビルドする場合は [.NET SDK](https://dotnet.microsoft.com/) を入れた上で、以下を実行してください。
+
+  ```bash
+  cd src/HorizonWalkerFreeCam
+  dotnet build -c Release
+  ```
+
+  成功すると `bin/Release/net472/HorizonWalkerFreeCam.dll` が生成されます。
+
 ## セットアップ (Mono版 BepInEx の場合)
 
 1. [BepInEx 5.4.x (x64)](https://github.com/BepInEx/BepInEx/releases) をダウンロードし、
    Horizon Walker のインストールフォルダ(`Horizon Walker.exe` があるフォルダ)に展開する。
 2. ゲームを一度起動して終了し、`BepInEx` フォルダが生成されることを確認する。
-3. 本リポジトリの `src/HorizonWalkerFreeCam/GameDir.user.props.sample` を
-   `GameDir.user.props` としてコピーし、中の `GameDir` を自分の環境のインストール先に書き換える。
-4. 以下でビルドする。
-
-   ```bash
-   cd src/HorizonWalkerFreeCam
-   dotnet build -c Release
-   ```
-
-5. 生成された `bin/Release/net472/HorizonWalkerFreeCam.dll` を
+3. 上記の手順でビルドした(または配布された)`HorizonWalkerFreeCam.dll` を
    `<インストール先>\BepInEx\plugins\` にコピーする。
-6. ゲームを起動し、デフォルトでは **F9キー** でフリーカメラをON/OFFできる。
+4. ゲームを起動し、デフォルトでは **F9キー** でフリーカメラをON/OFFできる。
 
 ## 操作方法(デフォルト設定)
 
@@ -59,7 +64,7 @@ BepInEx + Harmony の実行環境上で動作し、**いつでもトグルキー
    `FreeCamController.cs` のロジックはほぼそのまま流用可能です(`.csproj` の参照先とターゲットの調整が中心)。
 
 手元の実機バイナリが無いと確実な判定・検証ができないため、実際の配布パッケージ構成に合わせて
-`HorizonWalkerFreeCam.csproj` の参照(`ManagedDir` / `BepInExCoreDir`)を調整してください。
+`HorizonWalkerFreeCam.csproj` の参照を調整してください。
 
 ## 免責事項
 
@@ -70,9 +75,9 @@ BepInEx + Harmony の実行環境上で動作し、**いつでもトグルキー
 ## プロジェクト構成
 
 ```
+libs/BepInEx/                   # BepInEx公式リリース同梱バイナリ (BepInEx.dll, 0Harmony.dll)
 src/HorizonWalkerFreeCam/
-  HorizonWalkerFreeCam.csproj   # ビルド設定 (GameDir を自環境に合わせて設定)
+  HorizonWalkerFreeCam.csproj   # ビルド設定 (NuGetのUnityEngine.Modules + libs/BepInExを参照)
   Plugin.cs                     # BepInEx プラグインのエントリポイント・設定項目
   FreeCamController.cs          # フリーカメラの本体ロジック
-  GameDir.user.props.sample     # ローカルパス設定のサンプル
 ```
