@@ -1,43 +1,63 @@
 # hw — Horizon Walker Free Camera MOD
 
-[Horizon Walker](https://store.steampowered.com/app/3279780/Horizon_Walker/)(Steam版, Unity製)向けの非公式MODです。
-BepInEx + Harmony の実行環境上で動作し、**いつでもトグルキーで有効/無効にできるフリーカメラ**を追加します。
+[Horizon Walker](https://store.steampowered.com/app/3279780/Horizon_Walker/)(Steam版, Unity/IL2CPP製)向けの非公式MODです。
+BepInEx 6 (IL2CPP版) + Harmony の実行環境上で動作し、**いつでもトグルキーで有効/無効にできるフリーカメラ**を追加します。
 
 - カメラの追従・回転を行っているゲーム側のスクリプトを実行時に一時無効化してから、
   独自のフリーフライ操作(WASD移動 + マウス視点 + マウスホイールで速度調整)を乗せる方式です。
 - ゲーム内部のクラス名に依存しないため、アップデートによる互換性の影響を受けにくい設計です。
 - 経済・戦闘バランス・ガチャ確率などゲームプレイの根幹には一切干渉しません(カメラのみ)。
 
+> **本作はIL2CPPビルドです。** (`GameAssembly.dll` の存在で確認済み)
+> BepInEx 5 (Mono版) は動作しません。必ず下記の **BepInEx 6 (IL2CPP版)** を使ってください。
+
 ## 動作要件
 
-- Horizon Walker (Steam版)
-- [BepInEx](https://github.com/BepInEx/BepInEx) 5.x (Unity Mono 版)
-  - **注意:** 本作はモバイル版からの移植のため、IL2CPPビルドの可能性があります。
-    `<インストール先>\Horizon Walker_Data\il2cpp_data` や `GameAssembly.dll` が存在する場合はIL2CPPビルドです。
-    その場合は本プロジェクトをそのまま使えません。下記「IL2CPPの場合」を参照してください。
+- Horizon Walker (Steam版, IL2CPPビルド)
+- [BepInEx 6 (IL2CPP版, Bleeding Edge)](https://builds.bepinex.dev/projects/bepinex_be)
+- [.NET SDK](https://dotnet.microsoft.com/) (ビルド時のみ)
 
-## ビルド済みDLLの入手
+## セットアップ手順
 
-- 本リポジトリのビルドはGitHub Actions等でも再現できる、ゲーム本体不要のビルド構成です
-  (Unity公式APIはNuGetの `UnityEngine.Modules` パッケージ、BepInEx本体は `libs/BepInEx/` に同梱した
-  公式リリースバイナリを参照するため、手元にゲームが無くても `dotnet build` だけで動作するDLLが生成できます)。
-- 自分でビルドする場合は [.NET SDK](https://dotnet.microsoft.com/) を入れた上で、以下を実行してください。
+### 1. BepInEx 6 (IL2CPP版) の導入
 
-  ```bash
-  cd src/HorizonWalkerFreeCam
-  dotnet build -c Release
-  ```
+1. https://builds.bepinex.dev/projects/bepinex_be を開き、
+   `Unity.IL2CPP-win-x64`(64bit実行ファイルの場合。32bitなら `-win-x86`)の最新ビルドをダウンロードする。
+2. Horizon Walker のインストールフォルダ(`Horizon Walker.exe` があるフォルダ)に展開する。
+3. ゲームを一度起動する。**初回はInterop用アセンブリの生成のため時間がかかります**(数十秒〜数分、フリーズしたように見えても待つ)。
+4. 起動後、以下が生成されていることを確認する。
+   - `BepInEx\core\` … BepInEx本体一式
+   - `BepInEx\interop\` … このゲーム専用に生成されたUnity/ゲームスクリプトの相互運用アセンブリ
+   - `BepInEx\LogOutput.log`
 
-  成功すると `bin/Release/net472/HorizonWalkerFreeCam.dll` が生成されます。
+   これらが生成されていなければ、アーキテクチャ(x64/x86)の選択ミスか展開先が誤っている可能性があります。
 
-## セットアップ (Mono版 BepInEx の場合)
+### 2. MODのビルド
 
-1. [BepInEx 5.4.x (x64)](https://github.com/BepInEx/BepInEx/releases) をダウンロードし、
-   Horizon Walker のインストールフォルダ(`Horizon Walker.exe` があるフォルダ)に展開する。
-2. ゲームを一度起動して終了し、`BepInEx` フォルダが生成されることを確認する。
-3. 上記の手順でビルドした(または配布された)`HorizonWalkerFreeCam.dll` を
+Interop アセンブリはゲームのバージョンごとに変わるため、汎用パッケージとして同梱できません。
+**必ず手順1を済ませた自分の環境で本プロジェクトをビルドしてください。**
+
+1. `src/HorizonWalkerFreeCam/GameDir.user.props.sample` を
+   `src/HorizonWalkerFreeCam/GameDir.user.props` としてコピーし、
+   中の `GameDir` を自分の環境のインストール先に書き換える。
+2. ビルドする。
+
+   ```bash
+   cd src/HorizonWalkerFreeCam
+   dotnet build -c Release
+   ```
+
+3. 生成された `bin/Release/net6.0/HorizonWalkerFreeCam.dll` を
    `<インストール先>\BepInEx\plugins\` にコピーする。
-4. ゲームを起動し、デフォルトでは **F9キー** でフリーカメラをON/OFFできる。
+4. ゲームを再起動する。デフォルトでは **F9キー** でフリーカメラをON/OFFできる。
+
+## うまく動かないときの確認方法
+
+1. `BepInEx\config\BepInEx.cfg` の `[Logging.Console]` → `Enabled = true` にしてゲームを起動し、
+   コンソールに `Horizon Walker Free Camera 1.1.0 loaded.` のようなログが出るか確認する。
+2. 出ない場合は `BepInEx\LogOutput.log` の末尾にエラーが出ていないか確認する
+   (`HorizonWalkerFreeCam.dll` が `BepInEx\plugins\` 直下に置かれているか、
+   ビルド時のInteropアセンブリと実際にインストールされているBepInExのバージョンが一致しているか、なども見てください)。
 
 ## 操作方法(デフォルト設定)
 
@@ -53,19 +73,6 @@ BepInEx + Harmony の実行環境上で動作し、**いつでもトグルキー
 すべて `BepInEx/config/oct-incs.horizonwalker.freecam.cfg` から変更できます
 (トグルキー、移動速度、感度、Y軸反転、カーソルロックの有無など)。
 
-## IL2CPPの場合
-
-ゲームがIL2CPPビルドだった場合、通常の `UnityEngine.dll` を直接参照する本プロジェクトのままではロードできません。
-以下のいずれかで対応してください。
-
-1. [BepInEx 6 (IL2CPP版)](https://builds.bepinex.dev/projects/bepinex_be) を導入し、
-   自動生成される `interop` アセンブリ(`BepInEx/interop/*.dll`)を本プロジェクトの参照先に差し替える。
-2. `Camera` / `Input` 等のAPI自体は Il2CppInterop 経由でもほぼ同じシグネチャで使えるため、
-   `FreeCamController.cs` のロジックはほぼそのまま流用可能です(`.csproj` の参照先とターゲットの調整が中心)。
-
-手元の実機バイナリが無いと確実な判定・検証ができないため、実際の配布パッケージ構成に合わせて
-`HorizonWalkerFreeCam.csproj` の参照を調整してください。
-
 ## 免責事項
 
 - 本MODは私的な単一プレイヤー体験の改善(カメラ操作性の向上)のみを目的としています。
@@ -75,9 +82,16 @@ BepInEx + Harmony の実行環境上で動作し、**いつでもトグルキー
 ## プロジェクト構成
 
 ```
-libs/BepInEx/                   # BepInEx公式リリース同梱バイナリ (BepInEx.dll, 0Harmony.dll)
 src/HorizonWalkerFreeCam/
-  HorizonWalkerFreeCam.csproj   # ビルド設定 (NuGetのUnityEngine.Modules + libs/BepInExを参照)
-  Plugin.cs                     # BepInEx プラグインのエントリポイント・設定項目
+  HorizonWalkerFreeCam.csproj   # ビルド設定 (GameDir を自環境のBepInEx導入先に設定)
+  Plugin.cs                     # BepInEx (IL2CPP) プラグインのエントリポイント・設定項目
   FreeCamController.cs          # フリーカメラの本体ロジック
+  GameDir.user.props.sample     # ローカルパス設定のサンプル
 ```
+
+## 実装上の注意 (開発者向け)
+
+このリポジトリのビルド環境には実機のIL2CPP Interopアセンブリが存在しないため、
+`FreeCamController.cs` / `Plugin.cs` はBepInEx公式ドキュメントのAPI仕様に基づいて実装していますが、
+**実機ビルドでのコンパイル確認はできていません**。導入時にビルドエラーが出た場合は、
+`BepInEx\interop\` 内の実際のDLL名やAPIシグネチャを見ながら調整が必要な場合があります。

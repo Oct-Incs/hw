@@ -1,5 +1,5 @@
+using System;
 using System.Collections.Generic;
-using System.Linq;
 using BepInEx.Logging;
 using UnityEngine;
 
@@ -13,6 +13,10 @@ namespace HorizonWalkerFreeCam
     internal class FreeCamController : MonoBehaviour
     {
         private static readonly ManualLogSource Log = BepInEx.Logging.Logger.CreateLogSource(Plugin.PluginName);
+
+        // IL2CPPで注入されるMonoBehaviourは通常のコンストラクタではなく
+        // ネイティブポインタを受け取るこのコンストラクタ経由で生成される
+        public FreeCamController(IntPtr ptr) : base(ptr) { }
 
         private bool _active;
         private Camera _camera;
@@ -184,7 +188,13 @@ namespace HorizonWalkerFreeCam
         {
             if (Camera.main != null) return Camera.main;
 
-            return Camera.allCameras.FirstOrDefault(c => c != null && c.isActiveAndEnabled);
+            var cameras = Camera.allCameras;
+            for (int i = 0; i < cameras.Length; i++)
+            {
+                var cam = cameras[i];
+                if (cam != null && cam.isActiveAndEnabled) return cam;
+            }
+            return null;
         }
 
         private void OnDestroy()

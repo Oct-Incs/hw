@@ -1,15 +1,18 @@
 using BepInEx;
 using BepInEx.Configuration;
+using BepInEx.Unity.IL2CPP;
+using Il2CppInterop.Runtime;
+using Il2CppInterop.Runtime.Injection;
 using UnityEngine;
 
 namespace HorizonWalkerFreeCam
 {
     [BepInPlugin(PluginGuid, PluginName, PluginVersion)]
-    public class Plugin : BaseUnityPlugin
+    public class Plugin : BasePlugin
     {
         public const string PluginGuid = "oct-incs.horizonwalker.freecam";
         public const string PluginName = "Horizon Walker Free Camera";
-        public const string PluginVersion = "1.0.0";
+        public const string PluginVersion = "1.1.0";
 
         internal static ConfigEntry<KeyCode> ToggleKey;
         internal static ConfigEntry<float> MoveSpeed;
@@ -18,9 +21,7 @@ namespace HorizonWalkerFreeCam
         internal static ConfigEntry<bool> InvertY;
         internal static ConfigEntry<bool> LockCursorWhileActive;
 
-        private FreeCamController _controller;
-
-        private void Awake()
+        public override void Load()
         {
             ToggleKey = Config.Bind(
                 "General", "ToggleKey", KeyCode.F9,
@@ -46,9 +47,14 @@ namespace HorizonWalkerFreeCam
                 "General", "LockCursorWhileActive", true,
                 "フリーカメラ有効時にマウスカーソルをロックする");
 
-            _controller = gameObject.AddComponent<FreeCamController>();
+            // IL2CPPでは独自MonoBehaviourを使う前にIl2Cpp型として登録する必要がある
+            ClassInjector.RegisterTypeInIl2Cpp<FreeCamController>();
 
-            Logger.LogInfo($"{PluginName} {PluginVersion} loaded. Toggle key: {ToggleKey.Value}");
+            var go = new GameObject(PluginName);
+            GameObject.DontDestroyOnLoad(go);
+            go.AddComponent(Il2CppType.Of<FreeCamController>());
+
+            Log.LogInfo($"{PluginName} {PluginVersion} loaded. Toggle key: {ToggleKey.Value}");
         }
     }
 }
