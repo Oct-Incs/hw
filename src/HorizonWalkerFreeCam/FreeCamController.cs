@@ -33,24 +33,51 @@ namespace HorizonWalkerFreeCam
         private bool _prevCursorVisible;
         private CursorLockMode _prevCursorLockMode;
 
+        private bool _loggedFirstUpdate;
+        private float _lastHeartbeatLogTime;
+
         private void Update()
         {
-            if (Input.GetKeyDown(Plugin.ToggleKey.Value))
+            // 動作確認用: Update() が本当に呼ばれているかを一度だけログに残す
+            if (!_loggedFirstUpdate)
             {
-                Toggle();
+                _loggedFirstUpdate = true;
+                Log.LogInfo("[診断] FreeCamController.Update() の実行を確認しました。");
             }
 
-            if (_active)
+            try
             {
-                if (_camera == null)
+                bool togglePressed = Input.GetKeyDown(Plugin.ToggleKey.Value);
+
+                // 動作確認用: 5秒おきにキー監視が生きていることをログに残す
+                if (Time.unscaledTime - _lastHeartbeatLogTime > 5f)
                 {
-                    // シーン遷移等でカメラが破棄された場合は追従を諦めて解除する
-                    Deactivate(restoreTransform: false);
-                    return;
+                    _lastHeartbeatLogTime = Time.unscaledTime;
+                    Log.LogInfo($"[診断] 監視中... ToggleKey={Plugin.ToggleKey.Value}, active={_active}");
                 }
 
-                HandleLook();
-                HandleMove();
+                if (togglePressed)
+                {
+                    Log.LogInfo("[診断] トグルキーの押下を検知しました。");
+                    Toggle();
+                }
+
+                if (_active)
+                {
+                    if (_camera == null)
+                    {
+                        // シーン遷移等でカメラが破棄された場合は追従を諦めて解除する
+                        Deactivate(restoreTransform: false);
+                        return;
+                    }
+
+                    HandleLook();
+                    HandleMove();
+                }
+            }
+            catch (Exception ex)
+            {
+                Log.LogError($"[診断] Update中に例外が発生しました: {ex}");
             }
         }
 
